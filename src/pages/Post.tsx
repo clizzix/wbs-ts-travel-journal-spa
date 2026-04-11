@@ -4,9 +4,11 @@ import { toast } from 'react-toastify';
 import type { DbPost } from '@/types';
 import { getSinglePost } from '@/data';
 import { PostSkeleton, EditModal, DeleteModal } from '@/components';
+import { useAuth } from '@/hooks';
 
 const Post = () => {
 	const { id } = useParams<{ id: string }>();
+	const { user } = useAuth();
 	const [loading, setLoading] = useState(true);
 	const [post, setPost] = useState<DbPost | null>(null);
 
@@ -47,25 +49,26 @@ const Post = () => {
 				alt={post.title}
 				className='rounded-lg max-h-96 mx-auto'
 			/>
-			<div className='flex justify-center gap-6 my-4'>
-				<button onClick={showEditModal} className='btn btn-success'>
-					Edit
-				</button>
-				<EditModal
-					editModalRef={editModalRef}
-					_id={post._id}
-					image={post.image}
-					title={post.title}
-					content={post.content}
-					author={post.author}
-					setPost={setPost}
-				/>
+			{user && user._id === post.author && (
+				<div className='flex justify-center gap-6 my-4'>
+					<button onClick={showEditModal} className='btn btn-success'>
+						Edit
+					</button>
+					<EditModal
+						editModalRef={editModalRef}
+						_id={post._id}
+						image={post.image}
+						title={post.title}
+						content={post.content}
+						setPost={setPost}
+					/>
 
-				<button onClick={showDeleteModal} className='btn btn-error'>
-					Delete
-				</button>
-				<DeleteModal deleteModalRef={deleteModalRef} _id={post._id} />
-			</div>
+					<button onClick={showDeleteModal} className='btn btn-error'>
+						Delete
+					</button>
+					<DeleteModal deleteModalRef={deleteModalRef} _id={post._id} />
+				</div>
+			)}
 			<p>{post.content}</p>
 		</>
 	);

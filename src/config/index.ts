@@ -12,7 +12,7 @@ if (!parsedEnv.success) {
 		'❌ Invalid environment variables:\n',
 		z.prettifyError(parsedEnv.error)
 	);
-	process.exit(1);
+	throw new Error('Invalid environment variables');
 }
 
 export const { VITE_APP_TRAVEL_JOURNAL_API_URL, VITE_APP_AUTH_SERVER_URL } =

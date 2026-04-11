@@ -1,14 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
-import type { PostInput, DbPost } from '@/types';
+import type { DbPost } from '@/types';
 import { createPost } from '@/data';
+import { useAuth } from '@/hooks';
+
+type CreatePostFormState = {
+	title: string;
+	image: string;
+	content: string;
+};
 
 const CreatePost = () => {
 	const navigate = useNavigate();
-	const [{ title, author, image, content }, setForm] = useState<PostInput>({
+	const { user } = useAuth();
+	const [{ title, image, content }, setForm] = useState<CreatePostFormState>({
 		title: '',
-		author: '',
 		image: '',
 		content: ''
 	});
@@ -18,20 +25,21 @@ const CreatePost = () => {
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		try {
 			e.preventDefault();
-			if (!title || !author || !image || !content) {
+			if (!title || !image || !content) {
 				throw new Error('All fields are required');
 			}
+			if (!user) throw new Error('You must be signed in to create a post');
 			setLoading(true);
 			const newPost: DbPost = await createPost({
 				title,
-				author,
+				author: user._id,
 				image,
 				content
 			});
-			setForm({ title: '', author: '', image: '', content: '' });
+			setForm({ title: '', image: '', content: '' });
 			navigate(`/post/${newPost._id}`);
 		} catch (error: unknown) {
 			const message = (error as { message: string }).message;
@@ -46,28 +54,16 @@ const CreatePost = () => {
 			className='md:w-1/2 mx-auto flex flex-col gap-3'
 			onSubmit={handleSubmit}
 		>
-			<div className='flex gap-2 justify-between'>
-				<label className='form-control grow'>
-					<div className='label-text'>Title</div>
-					<input
-						name='title'
-						value={title}
-						onChange={handleChange}
-						placeholder='A title for your post...'
-						className='input input-bordered w-full'
-					/>
-				</label>
-				<label className='form-control grow'>
-					<div className='label-text'>Author</div>
-					<input
-						name='author'
-						value={author}
-						onChange={handleChange}
-						placeholder='Your name...'
-						className='input input-bordered w-full'
-					/>
-				</label>
-			</div>
+			<label className='form-control w-full'>
+				<div className='label-text'>Title</div>
+				<input
+					name='title'
+					value={title}
+					onChange={handleChange}
+					placeholder='A title for your post...'
+					className='input input-bordered w-full'
+				/>
+			</label>
 			<label className='form-control w-full'>
 				<div className='label-text'>Image URL</div>
 				<input

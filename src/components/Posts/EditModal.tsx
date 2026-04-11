@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import type { ModalRef, SetPost } from '@/types';
 import { updatePost } from '@/data';
+import { useAuth } from '@/hooks';
 
 type EditModalProps = {
 	editModalRef: ModalRef;
@@ -9,7 +10,6 @@ type EditModalProps = {
 	content: string;
 	image: string;
 	title: string;
-	author: string;
 	setPost: SetPost;
 };
 
@@ -19,12 +19,11 @@ const EditModal = ({
 	content,
 	image,
 	title,
-	author,
 	setPost
 }: EditModalProps) => {
-	const [{ newTitle, newAuthor, newImage, newContent }, setForm] = useState({
+	const { user } = useAuth();
+	const [{ newTitle, newImage, newContent }, setForm] = useState({
 		newTitle: title,
-		newAuthor: author,
 		newImage: image,
 		newContent: content
 	});
@@ -35,16 +34,17 @@ const EditModal = ({
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		try {
 			e.preventDefault();
 
-			if (!newTitle || !newAuthor || !newImage || !newContent)
+			if (!newTitle || !newImage || !newContent)
 				throw new Error('All fields are required');
+			if (!user) throw new Error('You must be signed in to edit a post');
 			setLoading(true);
 			const updatedPost = await updatePost(_id, {
 				title: newTitle,
-				author: newAuthor,
+				author: user._id,
 				image: newImage,
 				content: newContent
 			});
@@ -72,28 +72,16 @@ const EditModal = ({
 					onSubmit={handleSubmit}
 					className='md:w-1/2 mx-auto flex flex-col gap-3'
 				>
-					<div className='flex gap-2 justify-between'>
-						<label className='form-control grow'>
-							<div className='label-text'>Title</div>
-							<input
-								name='newTitle'
-								value={newTitle}
-								onChange={handleChange}
-								placeholder='A title for your post...'
-								className='input input-bordered w-full'
-							/>
-						</label>
-						<label className='form-control grow'>
-							<div className='label-text'>Author</div>
-							<input
-								name='author'
-								value={newAuthor}
-								onChange={handleChange}
-								placeholder='Your name...'
-								className='input input-bordered w-full'
-							/>
-						</label>
-					</div>
+					<label className='form-control w-full'>
+						<div className='label-text'>Title</div>
+						<input
+							name='newTitle'
+							value={newTitle}
+							onChange={handleChange}
+							placeholder='A title for your post...'
+							className='input input-bordered w-full'
+						/>
+					</label>
 					<label className='form-control w-full'>
 						<div className='label-text'>Image URL</div>
 						<input

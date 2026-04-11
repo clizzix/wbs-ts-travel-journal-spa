@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
+import { useAuth } from '@/hooks';
 
 type RegisterFormState = {
   firstName: string;
@@ -11,6 +12,8 @@ type RegisterFormState = {
 };
 
 const Register = () => {
+  const { signedIn, handleRegister } = useAuth();
+  const navigate = useNavigate();
   const [{ firstName, lastName, email, password, confirmPassword }, setForm] = useState<RegisterFormState>({
     firstName: '',
     lastName: '',
@@ -30,9 +33,9 @@ const Register = () => {
         throw new Error('All fields are required');
       if (password !== confirmPassword) throw new Error('Passwords do not match');
       setLoading(true);
-      console.log(firstName, lastName, email, password, confirmPassword);
-      // TODO: Implement registration logic
-      toast.success('Registration attempted (not implemented)');
+      await handleRegister({ firstName, lastName, email, password, confirmPassword });
+      toast.success('Account created successfully');
+      navigate('/create');
     } catch (error: unknown) {
       const message = (error as { message: string }).message;
       toast.error(message);
@@ -40,6 +43,8 @@ const Register = () => {
       setLoading(false);
     }
   };
+
+  if (signedIn) return <Navigate to='/create' replace />;
 
   return (
     <form className='my-5 md:w-1/2 mx-auto flex flex-col gap-3' onSubmit={handleSubmit}>

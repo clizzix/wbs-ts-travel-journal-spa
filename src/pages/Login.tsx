@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
-
-type LoginFormState = {
-  email: string;
-  password: string;
-};
+import type { LoginFormData } from '@/types';
+import { useAuth } from '@/hooks';
 
 const Login = () => {
-  const [{ email, password }, setForm] = useState<LoginFormState>({
+  const { signedIn, handleLogin } = useAuth();
+  const navigate = useNavigate();
+  const [{ email, password }, setForm] = useState<LoginFormData>({
     email: '',
     password: '',
   });
@@ -22,9 +21,9 @@ const Login = () => {
     try {
       if (!email || !password) throw new Error('All fields are required');
       setLoading(true);
-      console.log(email, password);
-      // TODO: Add login logic
-      toast.success('Login attempted (not implemented)');
+      await handleLogin({ email, password });
+      toast.success('Logged in successfully');
+      navigate('/create');
     } catch (error: unknown) {
       const message = (error as { message: string }).message;
       toast.error(message);
@@ -32,6 +31,8 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  if (signedIn) return <Navigate to='/create' replace />;
 
   return (
     <form className='my-5 md:w-1/2 mx-auto flex flex-col gap-3' onSubmit={handleSubmit}>

@@ -3,6 +3,14 @@ import { VITE_APP_TRAVEL_JOURNAL_API_URL } from '@/config';
 
 const baseURL = `${VITE_APP_TRAVEL_JOURNAL_API_URL}/posts`;
 
+const authHeaders = (): HeadersInit => {
+	const accessToken = localStorage.getItem('accessToken') ?? '';
+	return {
+		'Content-Type': 'application/json',
+		Authorization: `Bearer ${accessToken}`
+	};
+};
+
 export const getPosts = async (): Promise<DbPost[]> => {
 	const res = await fetch(baseURL);
 	if (!res.ok) {
@@ -30,9 +38,7 @@ export const getSinglePost = async (id: string): Promise<DbPost> => {
 export const createPost = async (formData: PostInput): Promise<DbPost> => {
 	const res = await fetch(baseURL, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
+		headers: authHeaders(),
 		body: JSON.stringify(formData)
 	});
 	if (!res.ok) {
@@ -48,9 +54,7 @@ export const updatePost = async (
 ): Promise<DbPost> => {
 	const res = await fetch(`${baseURL}/${id}`, {
 		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json'
-		},
+		headers: authHeaders(),
 		body: JSON.stringify(formData)
 	});
 	if (!res.ok) {
@@ -62,7 +66,8 @@ export const updatePost = async (
 };
 export const deletePost = async (id: string): Promise<{ message: string }> => {
 	const res = await fetch(`${baseURL}/${id}`, {
-		method: 'DELETE'
+		method: 'DELETE',
+		headers: authHeaders()
 	});
 	if (!res.ok) {
 		const errorData = await res.json();
