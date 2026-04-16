@@ -1,15 +1,11 @@
-import {
-    createContext,
-    useState,
-    useEffect,
-    type ReactNode
-} from 'react';
+import { createContext, useState, useEffect, type ReactNode } from 'react';
 import type { LoginFormData, SignupFormData, User } from '@/types';
 import {
     login as loginRequest,
     logout as logoutRequest,
     me as meRequest,
-    register as registerRequest
+    refresh,
+    register as registerRequest,
 } from '@/data';
 
 type AuthContextValue = {
@@ -22,7 +18,7 @@ type AuthContextValue = {
 };
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
-    undefined
+    undefined,
 );
 
 type AuthProviderProps = { children: ReactNode };
@@ -33,21 +29,39 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     const [checkSession, setCheckSession] = useState(true);
 
     useEffect(() => {
-        if (!checkSession) return;
-        (async () => {
-            try {
-                const accessToken = localStorage.getItem('accessToken') ?? '';
-                const { user } = await meRequest(accessToken);
-                setUser(user);
+        const getUser = async () => {
+            const refreshAndStore = async () => {
+                const { accessToken } = await refresh();
+                localStorage.setItem('accessToken', accessToken);
+            };
+
+            const fetchProfile = async () => {
+                const data = await meRequest();
+                setUser(data.user);
                 setSignedIn(true);
-            } catch {
-                setUser(null);
-                setSignedIn(false);
-                localStorage.removeItem('accessToken');
+            };
+            try {
+                if (!localStorage.getItem('accessToken')) {
+                    await refreshAndStore();
+                }
+                await fetchProfile();
+            } catch (error) {
+                console.error(error);
+                try {
+                    await refreshAndStore();
+                    await fetchProfile();
+                } catch (refreshError) {
+                    console.error(refreshError);
+                    localStorage.removeItem('accessToken');
+                    setSignedIn(false);
+                    setUser(null);
+                }
             } finally {
                 setCheckSession(false);
             }
-        })();
+        };
+
+        if (checkSession) getUser();
     }, [checkSession]);
 
     const handleLogin = async (credentials: LoginFormData) => {
@@ -77,7 +91,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
                 checkSession,
                 handleLogin,
                 handleRegister,
-                handleLogout
+                handleLogout,
             }}
         >
             {children}

@@ -3,61 +3,75 @@ import type {
     AuthTokenResponse,
     LoginFormData,
     MeResponse,
-    SignupFormData
+    SignupFormData,
 } from '@/types';
 
 const baseURL = `${VITE_APP_AUTH_SERVER_URL}`;
 
+type SuccessRes = { message: string };
+
 export const register = async (
-    credentials: SignupFormData
+    credentials: SignupFormData,
 ): Promise<AuthTokenResponse> => {
     const res = await fetch(`${baseURL}/register`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials)
+        body: JSON.stringify(credentials),
     });
     if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData?.error ?? 'An error occurred during registration');
+        throw new Error(
+            errorData?.error ?? 'An error occurred during registration',
+        );
     }
-    return res.json();
+    const data = (await res.json()) as AuthTokenResponse;
+
+    return data;
 };
 
 export const login = async (
-    credentials: LoginFormData
+    credentials: LoginFormData,
 ): Promise<AuthTokenResponse> => {
     const res = await fetch(`${baseURL}/login`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials)
+        body: JSON.stringify(credentials),
     });
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData?.error ?? 'An error occurred during login');
     }
-    return res.json();
+
+    const data = (await res.json()) as AuthTokenResponse;
+
+    return data;
 };
 
-export const me = async (accessToken: string): Promise<MeResponse> => {
+export const me = async (): Promise<MeResponse> => {
+    const accessToken = localStorage.getItem('accessToken');
     const res = await fetch(`${baseURL}/me`, {
         credentials: 'include',
         headers: {
-            Authorization: `Bearer ${accessToken}`
-        }
+            Authorization: `Bearer ${accessToken}`,
+        },
     });
     if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData?.error ?? 'An error occurred fetching the profile');
+        throw new Error(
+            errorData?.error ?? 'An error occurred fetching the profile',
+        );
     }
-    return res.json();
+
+    const { user } = (await res.json()) as SuccessRes & { user: MeResponse };
+    return user;
 };
 
 export const refresh = async (): Promise<AuthTokenResponse> => {
     const res = await fetch(`${baseURL}/refresh`, {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
     });
     if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -69,11 +83,14 @@ export const refresh = async (): Promise<AuthTokenResponse> => {
 export const logout = async (): Promise<{ message: string }> => {
     const res = await fetch(`${baseURL}/logout`, {
         method: 'DELETE',
-        credentials: 'include'
+        credentials: 'include',
     });
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData?.error ?? 'An error occurred during logout');
     }
-    return res.json();
+
+    const data = (await res.json()) as AuthTokenResponse;
+
+    return data;
 };
