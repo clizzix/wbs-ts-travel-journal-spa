@@ -54,6 +54,18 @@ export const me = async (accessToken: string): Promise<MeResponse> => {
     return res.json();
 };
 
+export const refresh = async (): Promise<AuthTokenResponse> => {
+    const res = await fetch(`${baseURL}/refresh`, {
+        method: 'POST',
+        credentials: 'include'
+    });
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.error ?? 'Login required');
+    }
+    return res.json();
+};
+
 export const logout = async (): Promise<{ message: string }> => {
     const res = await fetch(`${baseURL}/logout`, {
         method: 'DELETE',
